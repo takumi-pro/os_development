@@ -37,8 +37,10 @@ extern "C" void KernelMain(const FrameBufferConfig& frame_buffer_config) {
     }
   }
 
-  WriteAscii(*pixel_writer, 50, 50, 'A', {0, 0, 0});
-  WriteAscii(*pixel_writer, 58, 50, 'A', {0, 0, 0});
+  const char fonts[15] = {'H', 'i', '!', ',', 'I', '\'', 'm', ' ', 'T', 'a', 'k', 'u', 'm', 'i', '!'};
+  for (int i = 0; i < 15; ++i) {
+    WriteAscii(*pixel_writer, 8 * i, 50, fonts[i], {0, 0, 0});
+  }
 
   while (1) __asm__("hlt");
 }
