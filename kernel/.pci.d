@@ -31,4 +31,5 @@ pci.o: pci.cpp pci.hpp \
   /home/takumi/osbook/devenv/x86_64-elf/include/_ansi.h \
   /home/takumi/osbook/devenv/x86_64-elf/include/c++/v1/functional \
   /home/takumi/osbook/devenv/x86_64-elf/include/c++/v1/bit error.hpp \
-  asmfunc.h
+  /home/takumi/osbook/devenv/x86_64-elf/include/c++/v1/cstdio \
+  /home/takumi/osbook/devenv/x86_64-elf/include/c++/v1/stdio.h asmfunc.h

@@ -19,15 +19,14 @@ namespace {
   }
 
     /** @brief devices[num_device] に情報を書き込み num_device をインクリメントする． */
-  Error AddDevice(uint8_t bus, uint8_t device,
-                  uint8_t function, uint8_t header_type) {
+  Error AddDevice(const Device& device) {
     if (num_device == devices.size()) {
-      return Error::kFull;
+      return MAKE_ERROR(Error::kFull);
     }
 
-    devices[num_device] = Device{bus, device, function, header_type};
+    devices[num_device] = device;
     ++num_device;
-    return Error::kSuccess;
+    return MAKE_ERROR(Error::kSuccess);
   }
   // #@@range_end(add_device)
 
@@ -35,22 +34,20 @@ namespace {
 
   Error ScanFunction(uint8_t bus, uint8_t device, uint8_t function) {
     auto header_type = ReadHeaderType(bus, device, function);
-    if (auto err = AddDevice(bus, device, function, header_type)) {
+    auto class_code = ReadClassCode(bus, device, function);
+    Device dev{bus, device, function, header_type, class_code};
+    if (auto err = AddDevice(dev)) {
       return err;
     }
 
-    auto class_code = ReadClassCode(bus, device, function);
-    uint8_t base = (class_code >> 24) & 0xffu;
-    uint8_t sub = (class_code >> 16) & 0xffu;
-
-    if (base == 0x06u && sub == 0x04u) {
+    if (class_code.Match(0x06u, 0x04u)) {
       // standard PCI-PCI bridge
       auto bus_numbers = ReadBusNumbers(bus, device, function);
       uint8_t secondary_bus = (bus_numbers >> 8) & 0xffu;
       return ScanBus(secondary_bus);
     }
 
-    return Error::kSuccess;
+    return MAKE_ERROR(Error::kSuccess);
   }
 
   Error ScanDevice(uint8_t bus, uint8_t device) {
@@ -58,7 +55,7 @@ namespace {
       return err;
     }
     if (IsSingleFunctionDevice(ReadHeaderType(bus, device, 0))) {
-      return Error::kSuccess;
+      return MAKE_ERROR(Error::kSuccess);
     }
 
     for (uint8_t function = 1; function < 8; ++function) {
@@ -69,7 +66,7 @@ namespace {
         return err;
       }
     }
-    return Error::kSuccess;
+    return MAKE_ERROR(Error::kSuccess);
   }
 
   Error ScanBus(uint8_t bus) {
@@ -81,7 +78,7 @@ namespace {
         return err;
       }
     }
-    return Error::kSuccess;
+    return MAKE_ERROR(Error::kSuccess);
   }
 }
 
@@ -99,14 +96,14 @@ namespace pci {
     return IoIn32(kConfigData);
   }
 
-    uint8_t ReadHeaderType(uint8_t bus, uint8_t device, uint8_t function) {
+  uint8_t ReadHeaderType(uint8_t bus, uint8_t device, uint8_t function) {
     WriteAddress(MakeAddress(bus, device, function, 0x0c));
     return (ReadData() >> 16) & 0xffu;
   }
 
-  uint32_t ReadClassCode(uint8_t bus, uint8_t device, uint8_t function) {
-    WriteAddress(MakeAddress(bus, device, function, 0x08));
-    return ReadData();
+  uint16_t ReadDeviceId(uint8_t bus, uint8_t device, uint8_t function) {
+    WriteAddress(MakeAddress(bus, device, function, 0x00));
+    return ReadData() >> 16;
   }
 
   uint32_t ReadBusNumbers(uint8_t bus, uint8_t device, uint8_t function) {
@@ -119,6 +116,16 @@ namespace pci {
     return ReadData() & 0xffffu;
   }
   // #@@range_end(config_addr_data)
+
+  ClassCode ReadClassCode(uint8_t bus, uint8_t device, uint8_t function) {
+    WriteAddress(MakeAddress(bus, device, function, 0x08));
+    auto reg = ReadData();
+    ClassCode cc;
+    cc.base       = (reg >> 24) & 0xffu;
+    cc.sub        = (reg >> 16) & 0xffu;
+    cc.interface  = (reg >> 8)  & 0xffu;
+    return cc;
+  }
 
   bool IsSingleFunctionDevice(uint8_t header_type) {
     return (header_type & 0x80u) == 0;
@@ -140,6 +147,41 @@ namespace pci {
         return err;
       }
     }
-    return Error::kSuccess;
+    return MAKE_ERROR(Error::kSuccess);
+  }
+
+  uint32_t ReadConfReg(const Device& dev, uint8_t reg_addr) {
+    WriteAddress(MakeAddress(dev.bus, dev.device, dev.function, reg_addr));
+    return ReadData();
+  }
+
+  void WriteConfReg(const Device& dev, uint8_t reg_addr, uint32_t value) {
+    WriteAddress(MakeAddress(dev.bus, dev.device, dev.function, reg_addr));
+    WriteData(value);
+  }
+
+  WithError<uint64_t> ReadBar(Device& device, unsigned int bar_index) {
+    if (bar_index >= 6) {
+      return {0, MAKE_ERROR(Error::kIndexOutOfRange)};
+    }
+
+    const auto addr = CalcBarAddress(bar_index);
+    const auto bar = ReadConfReg(device, addr);
+
+    // 32 bit address
+    if ((bar & 4u) == 0) {
+      return {bar, MAKE_ERROR(Error::kSuccess)};
+    }
+
+    // 64 bit address
+    if (bar_index >= 5) {
+      return {0, MAKE_ERROR(Error::kIndexOutOfRange)};
+    }
+
+    const auto bar_upper = ReadConfReg(device, addr + 4);
+    return {
+      bar | (static_cast<uint64_t>(bar_upper) << 32),
+      MAKE_ERROR(Error::kSuccess)
+    };
   }
 }
