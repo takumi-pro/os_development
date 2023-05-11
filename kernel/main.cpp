@@ -17,6 +17,7 @@
 #include "usb/classdriver/mouse.hpp"
 #include "usb/xhci/xhci.hpp"
 #include "usb/xhci/trb.hpp"
+#include "interrupt.hpp"
 
 void operator delete(void* obj) noexcept {}
 
@@ -70,6 +71,21 @@ void SwitchEhci2Xhci(const pci::Device& xhc_dev) {
       superspeed_ports, ehci2xhci_ports);
 }
 // #@@range_end(switch_echi2xhci)
+
+// #@@range_begin(xhci_handler)
+usb::xhci::Controller* xhc;
+
+__attribute__((interrupt))
+void IntHandlerXHCI(InterruptFrame* frame) {
+  while(xhc->PrimaryEventRing()->HasFront()) {
+    if (auto err = ProcessEvent(*xhc)) {
+      Log(kError, "Error while ProcessEvent: %s at %s:%d\n",
+        err.Name(), err.File(), err.Line());
+    }
+  }
+  NotifyEndOfInterrupt();
+}
+// #@@range_end(xhci_handler)
 
 extern "C" void KernelMain(const FrameBufferConfig& frame_buffer_config) {
   switch (frame_buffer_config.pixel_format) {
@@ -141,6 +157,12 @@ extern "C" void KernelMain(const FrameBufferConfig& frame_buffer_config) {
       }
     }
   }
+
+  // #@@range_begin(load_idt)
+  const uint16_t cs = GetCS();
+  SetIDTEntry(idt[InterruptVector::kXHCI], MakeIDTAttr(DescriptorType::kInterruptGate, 0), reinterpret_cast<uint64_t>(IntHandlerXHCI), cs);
+  LoadIDT(sizeof(idt) - 1, reinterpret_cast<uintptr_t>(&idt[0]));
+  // #@@range_end(load_idt)
 
   // #@@range_begin(read_bar)
   const WithError<uint64_t> xhc_bar = pci::ReadBar(*xhc_dev, 0);
