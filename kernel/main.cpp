@@ -164,6 +164,11 @@ extern "C" void KernelMain(const FrameBufferConfig& frame_buffer_config) {
   LoadIDT(sizeof(idt) - 1, reinterpret_cast<uintptr_t>(&idt[0]));
   // #@@range_end(load_idt)
 
+  // #@@range_begin(msi)
+  const uint8_t bsp_local_apic_id = *reinterpret_cast<const uint32_t>(0xfee00020) >> 24;
+  
+  // #@@range_end(msi)
+
   // #@@range_begin(read_bar)
   const WithError<uint64_t> xhc_bar = pci::ReadBar(*xhc_dev, 0);
   Log(kDebug, "ReadBar: %s\n", xhc_bar.error.Name());
