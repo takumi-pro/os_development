@@ -7,10 +7,10 @@
 
 #include "frame_buffer_config.hpp"
 #include "graphics.hpp"
+#include "mouse.hpp"
 #include "font.hpp"
 #include "console.hpp"
 #include "pci.hpp"
-#include "mouse.hpp"
 #include "logger.hpp"
 #include "usb/memory.hpp"
 #include "usb/device.hpp"
@@ -18,6 +18,7 @@
 #include "usb/xhci/xhci.hpp"
 #include "usb/xhci/trb.hpp"
 #include "interrupt.hpp"
+#include "asmfunc.h"
 
 void operator delete(void* obj) noexcept {}
 
@@ -165,8 +166,15 @@ extern "C" void KernelMain(const FrameBufferConfig& frame_buffer_config) {
   // #@@range_end(load_idt)
 
   // #@@range_begin(msi)
-  const uint8_t bsp_local_apic_id = *reinterpret_cast<const uint32_t>(0xfee00020) >> 24;
-  
+  const uint8_t bsp_local_apic_id = *reinterpret_cast<const uint32_t*>(0xfee00020) >> 24;
+  pci::ConfigureMSIFixedDestination(
+    *xhc_dev,
+    bsp_local_apic_id,
+    pci::MSITriggerMode::kLevel,
+    pci::MSIDeliveryMode::kFixed,
+    InterruptVector::kXHCI,
+    0
+  );
   // #@@range_end(msi)
 
   // #@@range_begin(read_bar)
