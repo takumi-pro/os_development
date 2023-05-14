@@ -19,6 +19,7 @@
 #include "usb/xhci/trb.hpp"
 #include "interrupt.hpp"
 #include "asmfunc.h"
+#include "queue.hpp"
 
 void operator delete(void* obj) noexcept {}
 
@@ -73,17 +74,21 @@ void SwitchEhci2Xhci(const pci::Device& xhc_dev) {
 }
 // #@@range_end(switch_echi2xhci)
 
+// queue_message
+struct Message {
+  enum Type {
+    kInterruptXHCI,
+  } type;
+};
+
+ArrayQueue<Message>* main_queue;
+
 // #@@range_begin(xhci_handler)
 usb::xhci::Controller* xhc;
 
 __attribute__((interrupt))
 void IntHandlerXHCI(InterruptFrame* frame) {
-  while(xhc->PrimaryEventRing()->HasFront()) {
-    if (auto err = ProcessEvent(*xhc)) {
-      Log(kError, "Error while ProcessEvent: %s at %s:%d\n",
-        err.Name(), err.File(), err.Line());
-    }
-  }
+  main_queue->Push(Message{Message::kInterruptXHCI});
   NotifyEndOfInterrupt();
 }
 // #@@range_end(xhci_handler)
@@ -128,6 +133,11 @@ extern "C" void KernelMain(const FrameBufferConfig& frame_buffer_config) {
   mouse_cursor = new(mouse_cursor_buf) MouseCursor{
     pixel_writer, kDesktopBGColor, {300, 200}
   };
+
+  std::array<Message, 32> main_queue_data;
+  ArrayQueue<Message> main_queue{main_queue_data};
+  // ::はグローバルスコープを表す
+  ::main_queue = &main_queue;
 
   // pci device show
   auto err = pci::ScanAllBus();
@@ -221,14 +231,32 @@ extern "C" void KernelMain(const FrameBufferConfig& frame_buffer_config) {
   }
   // #@@range_end(configure_port)
 
-  // #@@range_begin(receive_event)
-  while (1) {
-    if (auto err = ProcessEvent(xhc)) {
-      Log(kError, "Error while ProcessEvent: %s at %s:%d\n",
-        err.Name(), err.File(), err.Line());
+  // evnet_loop
+  while (true) {
+    __asm__("cli");
+    if (main_queue.Count() == 0) {
+      __asm__("sti\n\thlt");
+      continue;
+    }
+
+    Message msg = main_queue.Front();
+    main_queue.Pop();
+    // accept interrupt process
+    __asm__("sti");
+
+    switch (msg.type) {
+      case Message::kInterruptXHCI:
+        while (xhc.PrimaryEventRing()->HasFront()) {
+          if (auto err = ProcessEvent(xhc)) {
+            Log(kError, "Error while ProcessEvent: %s at %s:5d\n",
+                err.Name(), err.File(), err.Line());
+          }
+        }
+        break;
+      default:
+        Log(kError, "Unknown message type: %d\n", msg.type);
     }
   }
-  // #@@range_end(receive_event)
 
   while (1) __asm__("hlt");
 }
