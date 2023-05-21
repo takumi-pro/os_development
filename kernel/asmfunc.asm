@@ -25,7 +25,6 @@ GetCS:
     mov ax, cs
     ret
 
-; #@@range_begin(load_idt_function)
 global LoadIDT  ; void LoadIDT(uint16_t limit, uint64_t offset);
 LoadIDT:
     push rbp
@@ -37,9 +36,7 @@ LoadIDT:
     mov rsp, rbp
     pop rbp
     ret
-; #@@range_end(load_idt_function)
 
-; #@@range_begin(load_gdt)
 global LoadGDT  ; void LoadGDT(uint16_t limit, uint64_t offset);
 LoadGDT:
     push rbp
@@ -51,42 +48,41 @@ LoadGDT:
     mov rsp, rbp
     pop rbp
     ret
-; #@@range_end(load_gdt)
 
-global SetCSSS ; void SetCSSS(uint16_t cs, uint16_t ss);
+global SetCSSS  ; void SetCSSS(uint16_t cs, uint16_t ss);
 SetCSSS:
-  push rbp
-  mov rbp, rsp
-  mov ss, si
-  mov rax, .next
-  push rdi 
-  push rax
-  o64 retf
+    push rbp
+    mov rbp, rsp
+    mov ss, si
+    mov rax, .next
+    push rdi    ; CS
+    push rax    ; RIP
+    o64 retf
 .next:
-  mov rsp, rbp
-  pop rbp
-  ret
+    mov rsp, rbp
+    pop rbp
+    ret
 
-global SetDSAll ; void SetDSAll(uint16_t value);
+global SetDSAll  ; void SetDSAll(uint16_t value);
 SetDSAll:
-  mov ds, di
-  mov es, di
-  mov fs, di
-  mov gs, di
-  ret
+    mov ds, di
+    mov es, di
+    mov fs, di
+    mov gs, di
+    ret
 
-global SetCR3 ; void SetCR3(uint64_t value);
+global SetCR3  ; void SetCR3(uint64_t value);
 SetCR3:
-  mov cr3, rdi
-  ret
+    mov cr3, rdi
+    ret
 
 extern kernel_main_stack
 extern KernelMainNewStack
 
 global KernelMain
 KernelMain:
-  mov rsp, kernel_main_stack + 1024 * 1024
-  call KernelMainNewStack
+    mov rsp, kernel_main_stack + 1024 * 1024
+    call KernelMainNewStack
 .fin:
-  hlt
-  jmp .fin
+    hlt
+    jmp .fin

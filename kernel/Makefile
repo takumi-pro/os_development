@@ -59,3 +59,7 @@ depends:
 	$(MAKE) $(DEPENDS)
 
 -include $(DEPENDS)
+
+.PHONY: qemu
+qemu:
+	$(RUNQEMU) $(LOADER) $(CURDIR)/kernel.elf

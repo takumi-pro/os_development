@@ -17,7 +17,6 @@ namespace pci {
   /** @brief CONFIG_DATA レジスタの IO ポートアドレス */
   const uint16_t kConfigData = 0x0cfc;
 
-  // #@@range_begin(class_code)
   /** @brief PCI デバイスのクラスコード */
   struct ClassCode {
     uint8_t base, sub, interface;
@@ -41,7 +40,6 @@ namespace pci {
     uint8_t bus, device, function, header_type;
     ClassCode class_code;
   };
-  // #@@range_end(class_code)
 
   /** @brief CONFIG_ADDRESS に指定された整数を書き込む */
   void WriteAddress(uint32_t address);
@@ -65,7 +63,7 @@ namespace pci {
 
   /** @brief 指定された PCI デバイスの 32 ビットレジスタを読み取る */
   uint32_t ReadConfReg(const Device& dev, uint8_t reg_addr);
-
+  /** @brief 指定された PCI デバイスの 32 ビットレジスタに書き込む */
   void WriteConfReg(const Device& dev, uint8_t reg_addr, uint32_t value);
 
   /** @brief バス番号レジスタを読み取る（ヘッダタイプ 1 用）
@@ -97,6 +95,7 @@ namespace pci {
 
   WithError<uint64_t> ReadBar(Device& device, unsigned int bar_index);
 
+  /** @brief PCI ケーパビリティレジスタの共通ヘッダ */
   union CapabilityHeader {
     uint32_t data;
     struct {
