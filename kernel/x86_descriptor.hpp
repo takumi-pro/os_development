@@ -13,4 +13,4 @@ enum class DescriptorType {
   // code & data segment types
   kReadWrite     = 2,
   kExecuteRead   = 10,
-}
+};

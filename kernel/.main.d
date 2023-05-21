@@ -38,13 +38,15 @@ main.o: main.cpp \
   /home/takumi/osbook/devenv/x86_64-elf/include/c++/v1/climits \
   /home/takumi/osbook/devenv/x86_64-elf/include/c++/v1/limits.h \
   /home/takumi/osbook/devenv/x86_64-elf/include/c++/v1/__split_buffer \
-  frame_buffer_config.hpp graphics.hpp mouse.hpp font.hpp console.hpp \
-  pci.hpp /home/takumi/osbook/devenv/x86_64-elf/include/c++/v1/array \
-  error.hpp logger.hpp usb/memory.hpp usb/device.hpp usb/setupdata.hpp \
+  frame_buffer_config.hpp memory_map.hpp graphics.hpp mouse.hpp font.hpp \
+  console.hpp pci.hpp \
+  /home/takumi/osbook/devenv/x86_64-elf/include/c++/v1/array error.hpp \
+  logger.hpp usb/memory.hpp usb/device.hpp usb/setupdata.hpp \
   usb/endpoint.hpp usb/arraymap.hpp \
   /home/takumi/osbook/devenv/x86_64-elf/include/c++/v1/optional \
   usb/classdriver/mouse.hpp usb/classdriver/hid.hpp \
   usb/classdriver/base.hpp usb/xhci/xhci.hpp usb/xhci/registers.hpp \
   register.hpp usb/xhci/context.hpp usb/xhci/ring.hpp usb/xhci/trb.hpp \
   usb/xhci/port.hpp usb/xhci/devmgr.hpp usb/xhci/device.hpp \
-  interrupt.hpp asmfunc.h queue.hpp
+  interrupt.hpp x86_descriptor.hpp asmfunc.h queue.hpp segment.hpp \
+  paging.hpp memory_manager.hpp

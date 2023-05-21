@@ -25,7 +25,7 @@ class FrameID {
   public:
     explicit FrameID(size_t id) : id_{id} {}
     size_t ID() const { return id_; }
-    void* Frame() const { return reinterpret_cast<void*>(id * kBytesPerFrame); }
+    void* Frame() const { return reinterpret_cast<void*>(id_ * kBytesPerFrame); }
   
   private:
     size_t id_;
@@ -50,11 +50,11 @@ class BitmapMemoryManager {
 
     void SetMemoryRange(FrameID range_begin, FrameID range_end);
 
-    private:
-      std::array<MapLineType, kFrameCount / kBitsPerMapLine> alloc_map_;
-      FrameID range_begin_;
-      FrameID range_end_;
+  private:
+    std::array<MapLineType, kFrameCount / kBitsPerMapLine> alloc_map_;
+    FrameID range_begin_;
+    FrameID range_end_;
 
-      bool GetBit(FrameID frame) const;
-      void SetBit(FrameID frame, bool allocated);
+    bool GetBit(FrameID frame) const;
+    void SetBit(FrameID frame, bool allocated);
 };

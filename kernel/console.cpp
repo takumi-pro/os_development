@@ -1,13 +1,19 @@
-#include <cstring>
+/**
+ * @file console.cpp
+ *
+ * コンソール描画のプログラムを集めたファイル．
+ */
 
 #include "console.hpp"
+
+#include <cstring>
 #include "font.hpp"
 
-Console::Console(
-  PixelWriter& writer,
-  const PixelColor& fg_color,
-  const PixelColor& bg_color
-) : writer_{writer}, fg_color_{fg_color}, bg_color_{bg_color}, buffer_{}, cursor_row_{0}, cursor_column_{0} {}
+Console::Console(PixelWriter& writer,
+    const PixelColor& fg_color, const PixelColor& bg_color)
+    : writer_{writer}, fg_color_{fg_color}, bg_color_{bg_color},
+      buffer_{}, cursor_row_{0}, cursor_column_{0} {
+}
 
 void Console::PutString(const char* s) {
   while (*s) {
@@ -24,7 +30,6 @@ void Console::PutString(const char* s) {
 
 void Console::Newline() {
   cursor_column_ = 0;
-  // 行数が画面範囲内に収まっていた場合
   if (cursor_row_ < kRows - 1) {
     ++cursor_row_;
   } else {
