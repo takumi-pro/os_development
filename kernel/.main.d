@@ -52,4 +52,5 @@ main.o: main.cpp \
   paging.hpp memory_manager.hpp window.hpp layer.hpp \
   /home/takumi/osbook/devenv/x86_64-elf/include/c++/v1/map \
   /home/takumi/osbook/devenv/x86_64-elf/include/c++/v1/__tree \
-  /home/takumi/osbook/devenv/x86_64-elf/include/c++/v1/__node_handle
+  /home/takumi/osbook/devenv/x86_64-elf/include/c++/v1/__node_handle \
+  timer.hpp
