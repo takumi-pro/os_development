@@ -64,6 +64,8 @@ class Window {
   /** @brief 平面描画領域の高さをピクセル単位で返す。 */
   int Height() const;
 
+  void Move(Vector2D<int> dst_pos, const Rectangle<int>& src);
+
   // #@@range_begin(fields)
  private:
   int width_, height_;
